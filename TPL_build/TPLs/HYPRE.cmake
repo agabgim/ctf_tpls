@@ -1,0 +1,113 @@
+# This will configure and build hypre
+# User can configure the source path by speficfying HYPRE_SRC_DIR
+#    the download path by specifying HYPRE_URL, or the installed 
+#    location by specifying HYPRE_INSTALL_DIR
+
+
+# Intialize download/src/install vars
+SET( HYPRE_BUILD_DIR "${CMAKE_BINARY_DIR}/HYPRE-prefix/src/HYPRE-build" )
+IF ( HYPRE_URL ) 
+    MESSAGE_TPL("   HYPRE_URL = ${HYPRE_URL}")
+    SET( HYPRE_CMAKE_URL            "${HYPRE_URL}"       )
+    SET( HYPRE_CMAKE_DOWNLOAD_DIR   "${HYPRE_BUILD_DIR}" )
+    SET( HYPRE_CMAKE_SOURCE_DIR     "${HYPRE_BUILD_DIR}" )
+    SET( HYPRE_CMAKE_INSTALL_DIR "${CMAKE_INSTALL_PREFIX}/hypre-${HYPRE_VERSION}" )
+    SET( CMAKE_BUILD_HYPRE TRUE )
+ELSEIF ( HYPRE_SRC_DIR )
+    MESSAGE_TPL("   HYPRE_SRC_DIR = ${HYPRE_SRC_DIR}")
+    SET( HYPRE_CMAKE_URL            "${HYPRE_SRC_DIR}" )
+    SET( HYPRE_CMAKE_DOWNLOAD_DIR   "${HYPRE_BUILD_DIR}" )
+    SET( HYPRE_CMAKE_SOURCE_DIR     "${HYPRE_BUILD_DIR}" )
+    SET( HYPRE_CMAKE_INSTALL_DIR "${CMAKE_INSTALL_PREFIX}/hypre-${HYPRE_VERSION}" )
+ELSEIF ( HYPRE_INSTALL_DIR ) 
+    SET( HYPRE_CMAKE_INSTALL_DIR "${HYPRE_INSTALL_DIR}" )
+    SET( CMAKE_BUILD_HYPRE FALSE )
+ELSE()
+    MESSAGE(FATAL_ERROR "Please specify HYPRE_SRC_DIR, HYPRE_URL, or HYPRE_INSTALL_DIR")
+ENDIF()
+FILE( MAKE_DIRECTORY "${HYPRE_CMAKE_INSTALL_DIR}" )
+SET( HYPRE_INSTALL_DIR "${HYPRE_CMAKE_INSTALL_DIR}" )
+MESSAGE_TPL( "   HYPRE_INSTALL_DIR = ${HYPRE_INSTALL_DIR}" )
+FILE( APPEND "${CMAKE_INSTALL_PREFIX}/TPLs.cmake" "SET(HYPRE_INSTALL_DIR \"${HYPRE_INSTALL_DIR}\")\n" )
+
+
+# Configure hypre
+IF ( CMAKE_BUILD_HYPRE )
+    SET( CONFIGURE_OPTIONS --with-blas=yes --with-lapack=yes )
+    LIST(APPEND CONFIGURE_OPTIONS --with-blas-libs=${BLAS_LIB_NAMES} )
+    LIST(APPEND CONFIGURE_OPTIONS --with-blas-lib-dirs=${BLAS_LIB_DIR} )
+    LIST(APPEND CONFIGURE_OPTIONS --with-lapack-libs=${LAPACK_LIB_NAMES} )
+    LIST(APPEND CONFIGURE_OPTIONS --with-lapack-lib-dirs=${LAPACK_LIB_DIR} )
+    LIST(APPEND CONFIGURE_OPTIONS --without-babel )
+    LIST(APPEND CONFIGURE_OPTIONS --without-mli )
+    LIST(APPEND CONFIGURE_OPTIONS --without-fei )
+    LIST(APPEND CONFIGURE_OPTIONS --without-superlu )
+    IF ( ${CMAKE_BUILD_TYPE} STREQUAL "Debug" )
+        LIST(APPEND CONFIGURE_OPTIONS --enable-debug )
+    ELSEIF ( ${CMAKE_BUILD_TYPE} STREQUAL "Release" )
+        LIST(APPEND CONFIGURE_OPTIONS --enable-optimize )
+    ELSE()
+        MESSAGE ( FATAL_ERROR "Unknown CMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}" )
+    ENDIF()
+    IF ( ENABLE_SHARED )
+        LIST(APPEND CONFIGURE_OPTIONS --enable-shared)
+    ELSE()
+        LIST(APPEND CONFIGURE_OPTIONS )
+    ENDIF()
+    IF ( ENABLE_STATIC )
+        LIST(APPEND CONFIGURE_OPTIONS )
+    ELSE()
+        LIST(APPEND CONFIGURE_OPTIONS )
+    ENDIF()
+    LIST(APPEND CONFIGURE_OPTIONS CC=mpicc CXX=mpicxx FC=mpif90 F77=mpif77 F90=mpif90 )
+    LIST(APPEND CONFIGURE_OPTIONS "CFLAGS=-fPIC" )
+    LIST(APPEND CONFIGURE_OPTIONS "CXXFLAGS=-fPIC" )
+    LIST(APPEND CONFIGURE_OPTIONS "FFLAGS=-fPIC" )
+ENDIF()
+
+
+# Build hypre
+IF ( CMAKE_BUILD_HYPRE )
+
+    SET(DEPENDS_ARGS)
+    IF (CMAKE_BUILD_LAPACK)
+      LIST(APPEND DEPENDS_ARGS  LAPACK)
+    ENDIF()
+    IF (DEPENDS_ARGS)
+      SET(DEPENDS_ARGS DEPENDS ${DEPENDS_ARGS})
+    ENDIF()
+
+    PRINT_VAR(CONFIGURE_OPTIONS)
+    EXTERNALPROJECT_ADD(
+        HYPRE
+        URL                 "${HYPRE_CMAKE_URL}"
+        DOWNLOAD_DIR        "${HYPRE_CMAKE_DOWNLOAD_DIR}"
+        SOURCE_DIR          "${HYPRE_CMAKE_SOURCE_DIR}"
+        UPDATE_COMMAND      ${CMAKE_COMMAND} -E echo "" 
+        CONFIGURE_COMMAND   "./configure" --prefix=${HYPRE_INSTALL_DIR} ${CONFIGURE_OPTIONS}
+        BUILD_COMMAND       make -j ${PROCS_INSTALL} VERBOSE=1
+        BUILD_IN_SOURCE     1
+        INSTALL_COMMAND     make install
+        ${DEPENDS_ARGS}
+        LOG_DOWNLOAD 1   LOG_UPDATE 1   LOG_CONFIGURE 1   LOG_BUILD 1   LOG_TEST 1   LOG_INSTALL 1
+    )
+
+    EXTERNALPROJECT_ADD_STEP(
+        HYPRE
+        pre-configure
+        COMMAND             ${CMAKE_COMMAND} -E copy_directory "${HYPRE_CMAKE_SOURCE_DIR}/src" "HYPRE-tmp" 
+        COMMAND             ${CMAKE_COMMAND} -E remove_directory "${HYPRE_CMAKE_SOURCE_DIR}"
+        COMMAND             ${CMAKE_COMMAND} -E rename "HYPRE-tmp" "${HYPRE_CMAKE_SOURCE_DIR}"
+        COMMENT             ""
+        DEPENDEES           download update
+        DEPENDERS           configure
+        WORKING_DIRECTORY   "${HYPRE_CMAKE_SOURCE_DIR}/.."
+        LOG                 0
+    )
+
+    ADD_TPL_SAVE_LOGS( HYPRE )
+    ADD_TPL_CLEAN( HYPRE )
+
+ENDIF()
+
+

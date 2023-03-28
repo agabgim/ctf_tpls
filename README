@@ -1,0 +1,8 @@
+###############################################
+README For CTF TPLS source and install scripts
+###############################################
+
+This repository contains source code and install scripts for the official CTF
+Third Party Libraries (TPLS).  For instructions on installing the standard
+CTF development and installation environment, see the instructions the 
+repository. https://github.ncsu.edu/CTFUsersGroup/CTF
