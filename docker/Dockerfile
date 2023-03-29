@@ -1,6 +1,6 @@
 # Base image from which to build is taken from Docker official repository for
 # Ubuntu. We pick the image for Ubuntu 16.04 Xenial which is a LTS version.
-FROM ubuntu:20.04
+FROM ubuntu:22.04
 
 MAINTAINER AGUSTIN ABARCA <aabarca@ncsu.edu>
 
@@ -11,6 +11,7 @@ ARG NPROC=8
 
 # Use the package management system as much as possible.
 RUN apt-get update && apt-get install -y \
+        vim \
         build-essential \
         gfortran \
         mpich \
@@ -30,7 +31,7 @@ RUN apt-get update && apt-get install -y \
     rm -rf /var/lib/apt/lists/*
 
 # Set CTF development environment.
-ENV CTF_TPL_INSTALL_DIR=/tools/ctf/gcc-8.3.0/tpls/opt \
+ENV CTF_TPL_INSTALL_DIR=/tools/ctf/gcc-11.3.0/tpls/opt \
     CTF_SCRATCH_DIR=/scratch \
     CTF_BUILD_DIR=/scratch/ctf_build \
     CTF_DIR=/scratch/ctf-Source.X.Y.Z \
