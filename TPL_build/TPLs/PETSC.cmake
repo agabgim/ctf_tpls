@@ -95,7 +95,7 @@ IF ( CMAKE_BUILD_PETSC )
       --download-superlu_dist=1
       --download-scalapack=1
       --download-superlu=1
-      --download-mumps=1
+      --download-mumps=0
       --with-cxx-dialect=C++11
       --with-cc=${CMAKE_C_COMPILER}
       --with-cxx=${CMAKE_CXX_COMPILER}
