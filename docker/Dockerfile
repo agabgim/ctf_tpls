@@ -18,8 +18,8 @@ RUN apt-get update && apt-get install -y \
         cmake \
         git \
         curl \
-        python-dev \
-        python-numpy \
+        python2-dev \
+        python2-numpy \
         perl \
         libx11-dev \
         libxext-dev \
@@ -40,9 +40,9 @@ ENV CTF_TPL_INSTALL_DIR=/tools/ctf/gcc-11.3.0/tpls/opt \
 # Install the CTF TPLs.
 RUN mkdir -p ${CTF_SCRATCH_DIR} && \
     cd ${CTF_SCRATCH_DIR} && \
-    git clone https://github.com/CASL/ctf_tpls && \
+    git clone https://github.com/agabgim/ctf_tpls.git && \
     mkdir -p ${CTF_SCRATCH_DIR}/tpl_build && \
-    cd ${CTF_SCRATCH_DIR}/tpl_build && \
+    cd ${CTF_SCRATCH_DIR}/tpl_build &&  \
     cmake \
         -D CMAKE_INSTALL_PREFIX=${CTF_TPL_INSTALL_DIR} \
         -D CMAKE_BUILD_TYPE=Release \
